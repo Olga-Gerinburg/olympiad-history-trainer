@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Тренажер для підготовки до олімпіади з історії | Ольга Герінбург</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2222%22 fill=%22%232563eb%22/><text x=%2250%22 y=%2254%22 font-size=%2260%22 text-anchor=%22middle%22 dominant-baseline=%22central%22>🏛️</text></svg>">
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- PapaParse для читання Google Таблиць -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <!-- Google Fonts: Inter & Merriweather -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'], serif: ['Merriweather', 'serif'] },
+          colors: {
+            brand: { 50: '#f0f7ff', 100: '#e0effe', 500: '#2563eb', 600: '#1d4ed8', 700: '#1e40af', 900: '#1e3a8a' },
+            accent: { 500: '#f59e0b', 600: '#d97706' }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <style>
+    .glass-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+    }
+    .custom-gradient { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); }
+    .option-card { transition: all 0.2s ease-in-out; }
+    .option-card:hover { transform: translateY(-2px); }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-fade-in { animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  </style>
+</head>
+<body class="bg-slate-50 font-sans text-slate-800 min-h-screen flex flex-col justify-between selection:bg-brand-500 selection:text-white">
+
+  <!-- Top Navigation Bar -->
+  <header class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200">
+    <div class="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3 cursor-pointer" onclick="goToMainMenu()">
+        <div class="w-10 h-10 rounded-xl custom-gradient flex items-center justify-center text-white text-lg font-bold shadow-md shadow-blue-500/20">
+          <i class="fa-solid fa-landmark"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-slate-900 text-sm md:text-base leading-tight">Олімпіадний тренажер</h1>
+          <p class="text-xs text-slate-500 font-medium">З історії України та всесвітньої історії</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-2">
+        <button id="navResetProgressBtn" onclick="resetProgress()" class="hidden text-xs md:text-sm px-3 py-1.5 rounded-lg border border-slate-200 text-rose-600 hover:bg-rose-50 transition flex items-center space-x-1.5 font-medium">
+          <i class="fa-solid fa-trash-can"></i>
+          <span class="hidden sm:inline">Очистити прогрес</span>
+        </button>
+        <button id="navChangeClassBtn" onclick="confirmChangeClass()" class="hidden text-xs md:text-sm px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 transition flex items-center space-x-1.5 font-medium">
+          <i class="fa-solid fa-arrows-rotate text-brand-500"></i>
+          <span>Змінити клас</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Модальне вікно для повнорозмірного зображення -->
+    <div id="imageModal" class="hidden fixed inset-0 z-[100] bg-slate-900/95 flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+      <button onclick="closeImageModal()" class="absolute top-4 right-4 sm:top-6 sm:right-6 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white text-xl transition shadow-lg">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+      <img id="modalImg" src="" alt="Повне зображення" class="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl">
+    </div>
+  </main>
+  <main class="max-w-4xl w-full mx-auto p-4 md:p-6 flex-grow">
+
+    <!-- 1. START SCREEN -->
+    <div id="startScreen" class="animate-fade-in space-y-6">
+      
+      <!-- Hero Banner -->
+      <div class="rounded-2xl p-6 md:p-8 custom-gradient text-white shadow-xl relative overflow-hidden">
+        <div class="relative z-10 space-y-3">
+          <span class="bg-white/20 backdrop-blur-md text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider text-blue-100">
+            Мікронавчання &amp; Інтерактив
+          </span>
+          <h2 class="text-2xl md:text-4xl font-serif font-bold tracking-tight leading-tight">
+            Тренажер для підготовки до олімпіади з історії
+          </h2>
+          <p class="text-blue-100 text-sm md:text-base max-w-2xl font-normal leading-relaxed">
+            Миттєва перевірка відповідей, адаптивна обробка текстових термінів та пояснення до кожного питання.
+          </p>
+          <div class="pt-2 flex items-center text-xs md:text-sm text-blue-200 font-medium space-x-2">
+            <i class="fa-solid fa-user-pen"></i>
+            <span>Автор розробки — <strong>Ольга Герінбург</strong></span>
+          </div>
+        </div>
+        <div class="absolute -right-8 -bottom-12 opacity-10 text-white text-9xl pointer-events-none">
+          <i class="fa-solid fa-scroll"></i>
+        </div>
+      </div>
+
+      <!-- Database Status -->
+      <div class="glass-card p-5 rounded-xl border border-slate-200 space-y-3">
+        <div class="flex items-center space-x-2">
+          <i class="fa-solid fa-cloud-arrow-down text-brand-600 text-lg"></i>
+          <h4 class="font-semibold text-slate-800 text-sm">Статус бази завдань</h4>
+        </div>
+        <div class="flex items-center gap-2">
+          <span id="csvFileName" class="text-xs text-slate-500 font-medium flex items-center gap-2">
+             <i class="fa-solid fa-circle-notch fa-spin"></i> Підключення до Google Таблиці...
+          </span>
+        </div>
+      </div>
+
+      <!-- Class Selection Grid -->
+      <div class="space-y-4 pt-2">
+        <h3 class="text-lg font-bold text-slate-800 flex items-center space-x-2">
+          <i class="fa-solid fa-layer-group text-brand-500"></i>
+          <span>Оберіть клас для тренування:</span>
+        </h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <button onclick="startLesson('6-8')" class="option-card glass-card p-5 rounded-xl border border-slate-200 hover:border-brand-500 text-left flex items-start justify-between group shadow-sm">
+            <div class="space-y-1">
+              <div class="flex items-center space-x-2">
+                <span class="w-7 h-7 rounded-lg bg-blue-100 text-brand-600 font-bold text-xs flex items-center justify-center">1</span>
+                <div class="flex items-center space-x-2">
+                  <span class="font-bold text-slate-900 group-hover:text-brand-600 transition">6–8 класи</span>
+                  <span id="count-6-8" class="text-emerald-600 text-[10px] font-bold bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md hidden"></span>
+                </div>
+              </div>
+              <p class="text-xs text-slate-500 pl-9">Стародавній світ, Середні віки, Ранній Новий час</p>
+            </div>
+            <i class="fa-solid fa-chevron-right text-slate-300 group-hover:text-brand-500 group-hover:translate-x-1 transition"></i>
+          </button>
+
+          <button onclick="startLesson('9')" class="option-card glass-card p-5 rounded-xl border border-slate-200 hover:border-brand-500 text-left flex items-start justify-between group shadow-sm">
+            <div class="space-y-1">
+              <div class="flex items-center space-x-2">
+                <span class="w-7 h-7 rounded-lg bg-blue-100 text-brand-600 font-bold text-xs flex items-center justify-center">2</span>
+                <div class="flex items-center space-x-2">
+                  <span class="font-bold text-slate-900 group-hover:text-brand-600 transition">9 клас</span>
+                  <span id="count-9" class="text-emerald-600 text-[10px] font-bold bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md hidden"></span>
+                </div>
+              </div>
+              <p class="text-xs text-slate-500 pl-9">Історія Нового часу (XIX століття)</p>
+            </div>
+            <i class="fa-solid fa-chevron-right text-slate-300 group-hover:text-brand-500 group-hover:translate-x-1 transition"></i>
+          </button>
+
+          <button onclick="startLesson('10')" class="option-card glass-card p-5 rounded-xl border border-slate-200 hover:border-brand-500 text-left flex items-start justify-between group shadow-sm">
+            <div class="space-y-1">
+              <div class="flex items-center space-x-2">
+                <span class="w-7 h-7 rounded-lg bg-blue-100 text-brand-600 font-bold text-xs flex items-center justify-center">3</span>
+                <div class="flex items-center space-x-2">
+                  <span class="font-bold text-slate-900 group-hover:text-brand-600 transition">10 клас</span>
+                  <span id="count-10" class="text-emerald-600 text-[10px] font-bold bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md hidden"></span>
+                </div>
+              </div>
+              <p class="text-xs text-slate-500 pl-9">Перша світова війна, Українська революція, XX ст.</p>
+            </div>
+            <i class="fa-solid fa-chevron-right text-slate-300 group-hover:text-brand-500 group-hover:translate-x-1 transition"></i>
+          </button>
+
+          <!-- 11 клас із замочком -->
+          <button onclick="startLesson('11')" class="option-card glass-card p-5 rounded-xl border border-slate-200 hover:border-brand-500 text-left flex items-start justify-between group shadow-sm opacity-80">
+            <div class="space-y-1">
+              <div class="flex items-center space-x-2">
+                <span class="w-7 h-7 rounded-lg bg-blue-100 text-brand-600 font-bold text-xs flex items-center justify-center">4</span>
+                <div class="flex items-center space-x-2">
+                  <span class="font-bold text-slate-900 transition">11 клас</span>
+                  <span class="text-rose-500 text-[10px] font-bold bg-rose-50 border border-rose-100 px-2 py-0.5 rounded-md"><i class="fa-solid fa-lock mr-1"></i>У розробці</span>
+                </div>
+              </div>
+              <p class="text-xs text-slate-500 pl-9">Друга світова війна та сучасна історія України</p>
+            </div>
+            <i class="fa-solid fa-chevron-right text-slate-300 transition"></i>
+          </button>
+        </div>
+       <!-- Блок пояснення мікроуроків -->
+        <div class="mt-4 p-5 bg-blue-50/50 border border-blue-100 rounded-xl flex flex-col sm:flex-row items-start gap-4">
+          <div class="text-brand-500 text-2xl mt-1 shrink-0"><i class="fa-solid fa-graduation-cap"></i></div>
+          <div class="space-y-1.5">
+            <h4 class="font-bold text-brand-900 text-sm">Як працює тренажер?</h4>
+            <p class="text-xs md:text-sm text-brand-800/80 leading-relaxed">Навчання розбито на зручні мікроуроки. Кожен урок містить <strong>20 випадкових запитань</strong> з обраної теми. Після завершення одного мікроуроку ви зможете одразу розпочати наступний — система буде підкидати вам нові запитання, поки ви не пройдете всю базу!</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. QUIZ QUESTION SCREEN -->
+    <div id="quizScreen" class="hidden animate-fade-in space-y-4">
+      <div class="glass-card p-4 rounded-xl border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div class="flex items-center space-x-2 w-full sm:w-auto flex-wrap gap-y-2">
+          <span id="quizClassBadge" class="bg-brand-50 text-brand-700 text-[11px] sm:text-xs font-bold px-3 py-1 rounded-full border border-brand-100"></span>
+          <span id="quizLessonBadge" class="bg-indigo-50 text-indigo-700 text-[11px] sm:text-xs font-bold px-3 py-1 rounded-full border border-indigo-100">Мікроурок №1</span>
+          <span id="quizProgressText" class="text-[11px] sm:text-xs font-semibold text-slate-500 pl-1">Запитання 1/20</span>
+        </div>
+        <div class="w-full sm:w-1/2 flex items-center space-x-3">
+          <div class="flex-grow bg-slate-100 rounded-full h-2 overflow-hidden">
+            <div id="progressBar" class="bg-brand-500 h-2 rounded-full transition-all duration-300 w-0"></div>
+          </div>
+          <span id="quizScoreText" class="text-xs font-bold text-slate-700 whitespace-nowrap">0 балів</span>
+        </div>
+      </div>
+
+      <div class="glass-card p-6 rounded-2xl border border-slate-200 space-y-5 shadow-sm">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div class="flex items-center space-x-2 text-xs font-semibold text-slate-500">
+            <i class="fa-regular fa-circle-question text-brand-500"></i>
+            <span id="questionTypeLabel">Вибір однієї відповіді</span>
+          </div>
+        </div>
+
+        <div id="questionImageContainer" class="hidden flex flex-col space-y-3 mb-2">
+          <div class="flex justify-center">
+            <img id="questionImg" src="" alt="Ілюстрація" class="w-[300px] h-[300px] object-contain rounded-xl border border-slate-200 bg-white shadow-sm p-1 hidden">
+          </div>
+          <!-- Кнопка тепер по центру завдяки self-center -->
+          <button onclick="openImageModal()" class="inline-flex items-center justify-center space-x-2 text-xs text-brand-600 hover:text-brand-700 bg-brand-50 px-3 py-1.5 rounded-lg border border-brand-100 font-medium transition w-full sm:w-auto self-center">
+            <i class="fa-solid fa-image"></i>
+            <span>Відкрити зображення у повному розмірі</span>
+          </button>
+        </div>
+
+        <h3 id="questionText" class="text-base md:text-lg font-serif font-bold text-slate-900 leading-relaxed"></h3>
+
+        <div class="text-xs text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-100 flex items-center space-x-2">
+          <i class="fa-solid fa-circle-info text-brand-500"></i>
+          <span id="questionInstruction">Оберіть 1 правильний варіант відповіді.</span>
+        </div>
+
+        <div id="optionsContainer" class="space-y-2.5"></div>
+
+        <div id="textInputContainer" class="hidden space-y-3">
+          <input type="text" id="userTextInput" placeholder="Введіть дату, прізвище або термін..." class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none transition text-sm text-slate-800 font-medium">
+          <button onclick="submitTextAnswer()" class="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-semibold text-sm shadow-md transition flex items-center justify-center space-x-2">
+            <i class="fa-solid fa-paper-plane"></i>
+            <span>Відповісти</span>
+          </button>
+        </div>
+
+        <div id="feedbackContainer" class="hidden animate-fade-in p-4 rounded-xl space-y-3">
+          <div id="feedbackTitle" class="font-bold text-sm md:text-base flex items-center space-x-2"></div>
+          <div id="feedbackDetails" class="text-xs md:text-sm leading-relaxed border-t pt-2 space-y-1"></div>
+          
+          <!-- КНОПКА ЗАПИТАТИ В ШІ -->
+          <div class="pt-2 border-t border-slate-200/60 mt-2">
+            <button onclick="askAI()" class="flex items-center space-x-2 text-xs font-semibold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 py-2 px-4 rounded-lg transition border border-indigo-200 w-full sm:w-auto justify-center">
+               <span>✨ Запитати в ШІ (детальніше пояснення)</span>
+            </button>
+          </div>
+          
+          <div class="pt-2 flex justify-end">
+            <button onclick="nextQuestion()" class="px-5 py-2.5 bg-slate-900 hover:bg-black text-white text-xs md:text-sm font-semibold rounded-xl transition flex items-center space-x-2 shadow-md">
+              <span>Далі</span>
+              <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. SUMMARY SCREEN -->
+    <div id="summaryScreen" class="hidden animate-fade-in space-y-6">
+      <div class="glass-card p-6 md:p-8 rounded-2xl border border-slate-200 text-center space-y-6">
+        <div class="w-20 h-20 mx-auto rounded-full bg-amber-100 text-amber-500 flex items-center justify-center text-3xl shadow-inner">
+          <i class="fa-solid fa-trophy"></i>
+        </div>
+        <div class="space-y-2">
+          <h2 class="text-2xl font-serif font-bold text-slate-900">Урок завершено!</h2>
+          <p class="text-xs md:text-sm text-slate-500">Ваш результат у підготовці до олімпіади:</p>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-lg mx-auto">
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+            <div id="finalScoreVal" class="text-2xl font-bold text-brand-600">0/0</div>
+            <div class="text-[11px] text-slate-400 uppercase font-semibold">Правильних відповідей</div>
+          </div>
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+            <div id="finalPercentVal" class="text-2xl font-bold text-emerald-600">0%</div>
+            <div class="text-[11px] text-slate-400 uppercase font-semibold">Успішність</div>
+          </div>
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 col-span-2 sm:col-span-1">
+            <div id="finalGradeVal" class="text-2xl font-bold text-amber-600">—</div>
+            <div class="text-[11px] text-slate-400 uppercase font-semibold">Оцінка</div>
+          </div>
+        </div>
+        <div id="finalCommentBox" class="p-4 rounded-xl bg-blue-50 text-brand-900 text-xs md:text-sm font-medium border border-blue-100 leading-relaxed max-w-lg mx-auto"></div>
+        <div class="flex flex-col sm:flex-row justify-center gap-3 pt-2">
+          <button onclick="restartCurrentClass()" class="px-5 py-3 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-xl text-xs md:text-sm transition flex items-center justify-center space-x-2">
+            <span>До нового уроку</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+          <button onclick="goToMainMenu()" class="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs md:text-sm transition flex items-center justify-center space-x-2">
+            <i class="fa-solid fa-layer-group"></i>
+            <span>Обрати інший клас</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="bg-white border-t border-slate-200 py-4 mt-8">
+    <div class="max-w-4xl mx-auto px-4 text-center text-xs text-slate-400 space-y-1">
+      <p>Олімпіадний інтерактивний тренажер з історії України та всесвітньої історії</p>
+      <p class="font-medium text-slate-500">Автор розробки — Ольга Герінбург</p>
+    </div>
+  </footer>
+
+  <script>
+    const SHEET_URLS = [
+      { classLevel: "6-8", url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQtq01RDU3zzPiPEp9QphRCEEX-ZyZYQJDPl5O3ANlUxCpVV67P3PjpN7mI9RItHw/pub?gid=1650192817&single=true&output=csv" },
+      { classLevel: "9", url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQtq01RDU3zzPiPEp9QphRCEEX-ZyZYQJDPl5O3ANlUxCpVV67P3PjpN7mI9RItHw/pub?gid=709294118&single=true&output=csv" },
+      { classLevel: "10", url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQtq01RDU3zzPiPEp9QphRCEEX-ZyZYQJDPl5O3ANlUxCpVV67P3PjpN7mI9RItHw/pub?gid=1048700888&single=true&output=csv" },
+      { classLevel: "11", url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQtq01RDU3zzPiPEp9QphRCEEX-ZyZYQJDPl5O3ANlUxCpVV67P3PjpN7mI9RItHw/pub?gid=198335690&single=true&output=csv" }
+    ];
+
+   let database = [];
+    let currentQuestions = [];
+    let currentIndex = 0;
+    let score = 0;
+    let selectedClass = "";
+    let isAnswered = false;
+    let selectedOptions = [];
+
+    function getDirectImageUrl(url) {
+      if (!url) return "";
+      let cleanUrl = url.trim();
+      if (!cleanUrl.includes("google.com")) return cleanUrl; 
+      
+      const driveRegex = /\/file\/d\/([^\/]+)/;
+      const match = cleanUrl.match(driveRegex);
+      if (match && match[1]) {
+        return `https://lh3.googleusercontent.com/d/${match[1]}`;
+      }
+      return cleanUrl;
+    }
+
+    function extractOptionsFromText(text) {
+        if (!text) return [];
+        let lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+        if (lines.length > 1) return lines; 
+        
+        let arr = text.split(/(?=(?:^|\s)(?:[А-ЯІЇЄҐA-Zа-яіїєґa-z]|[0-9]+)[\)\.](?:\s|$))/i);
+        arr = arr.map(o => o.trim()).filter(o => o.length > 0);
+        if (arr.length > 1) return arr;
+        
+        arr = text.split(/(?=(?:^|\s)(?:[А-ЯІЇЄҐA-Zа-яіїєґa-z]|[0-9]+)[\)\.])/i);
+        return arr.map(o => o.trim()).filter(o => o.length > 0);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      // Миттєво ховаємо головний екран, щоб він не блимав
+      if (localStorage.getItem('historyQuiz_activeClass')) {
+          document.getElementById('startScreen').classList.add('hidden');
+          document.getElementById('quizScreen').classList.remove('hidden');
+          document.getElementById('questionText').innerHTML = '<i class="fa-solid fa-circle-notch fa-spin text-brand-500"></i> Відновлення уроку...';
+          document.getElementById('navChangeClassBtn').classList.remove('hidden');
+          document.getElementById('navResetProgressBtn').classList.remove('hidden');
+      }
+
+      const statusEl = document.getElementById('csvFileName');
+      statusEl.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Завантаження завдань...`;
+
+      Promise.all(SHEET_URLS.map(sheet => {
+        return new Promise((resolve) => {
+          if (!sheet.url || !sheet.url.startsWith("http")) { resolve([]); return; }
+          Papa.parse(sheet.url, {
+            download: true,
+            header: true,
+            skipEmptyLines: true,
+            complete: function(results) {
+              const parsed = [];
+              results.data.forEach(row => {
+                let questionText = (row["Запитання / інструкція"] || row["Запитання"] || "")?.toString().trim();
+                if (!questionText) return; 
+
+                const typeRaw = (row["Тип завдання"] || "")?.toString().toLowerCase();
+                
+                let typeVal = "text";
+                if (typeRaw.includes("відповідн")) typeVal = "matching";
+                else if (typeRaw.includes("так") && typeRaw.includes("ні")) typeVal = "true_false";
+                else if (typeRaw.includes("вибір")) typeVal = "choice";
+                else if (typeRaw.includes("флешкарт") || typeRaw.includes("картк")) typeVal = "flashcard";
+                else if (typeRaw.includes("хронолог") || typeRaw.includes("послідовн")) typeVal = "chronology";
+
+                let rawOptions = (row["Варіанти / матеріал завдання"] || row["Варіанти"] || "")?.toString().trim();
+                
+                if ((typeVal === "choice" || typeVal === "chronology") && !rawOptions) {
+                    let match = questionText.match(/(?:^|\s)([А-ЯІЇЄҐA-Z]\)|[0-9]+[\.\)])\s/i);
+                    if (match) {
+                        rawOptions = questionText.substring(match.index).trim();
+                        questionText = questionText.substring(0, match.index).trim();
+                    }
+                }
+
+                let optionsArr = [];
+                if (typeVal === "choice" || typeVal === "chronology") {
+                    optionsArr = extractOptionsFromText(rawOptions);
+                } else if (typeVal === "matching") {
+                    optionsArr = rawOptions.split('\n').map(o => o.trim()).filter(o => o.length > 0);
+                } else if (typeVal === "true_false") {
+                    optionsArr = ["Так", "Ні"]; 
+                } else if (typeVal === "flashcard" && rawOptions) {
+                    optionsArr = [rawOptions]; 
+                }
+
+                const keyText = (row["Ключ із джерела"] || row["Ключ із джерела або Еталон відповіді"] || "")?.toString().trim();
+                const expText = (row["Пояснення для учня"] || row["Пояснення"] || "")?.toString().trim();
+                
+                // Зчитування картинки з нової колонки (пріоритет) або старого посилання
+                const imgFileText = (row["Файл зображення"] || row["Назва файлу"] || "")?.toString().trim();
+                const imgLinkText = (row["Пряме посилання на зображення"] || row["Посилання на зображення"] || "")?.toString().trim();
+                let finalImage = imgFileText ? imgFileText : getDirectImageUrl(imgLinkText);
+
+                // Захист: якщо це слово "немає", дефіс або пробіл (немає крапки) - ігноруємо
+                if (finalImage && !finalImage.includes('.')) {
+                    finalImage = "";
+                }
+
+                parsed.push({
+                  class: sheet.classLevel,
+                  type: typeVal,
+                  question: questionText,
+                  options: optionsArr,
+                  key: keyText,
+                  explanation: expText,
+                  image: finalImage
+                });
+              });
+              resolve(parsed);
+            },
+            error: function() { resolve([]); }
+          });
+        });
+      })).then(allResults => {
+        database = allResults.flat();
+        if (database.length > 0) {
+          statusEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> База успішно підключена (Завдань: ${database.length})`;
+          statusEl.classList.remove('text-slate-500');
+          statusEl.classList.add('text-emerald-600');
+          // Виведення кількості завдань зеленим кольором
+          const count68 = database.filter(q => q.class === '6-8' || q.class.includes('6-8')).length;
+          const count9 = database.filter(q => q.class === '9' || q.class.includes('9')).length;
+          const count10 = database.filter(q => q.class === '10' || q.class.includes('10')).length;
+          
+          if (count68 > 0) { const el = document.getElementById('count-6-8'); el.textContent = `${count68} завд.`; el.classList.remove('hidden'); }
+          if (count9 > 0) { const el = document.getElementById('count-9'); el.textContent = `${count9} завд.`; el.classList.remove('hidden'); }
+          if (count10 > 0) { const el = document.getElementById('count-10'); el.textContent = `${count10} завд.`; el.classList.remove('hidden'); }
+
+          // Автоматичне відновлення сесії при оновленні сторінки
+          const savedClass = localStorage.getItem('historyQuiz_activeClass');
+          if (savedClass) {
+              let stateStr = localStorage.getItem('historyQuizState_' + savedClass);
+              let hasActiveSession = false;
+              
+              if (stateStr) {
+                  let state = JSON.parse(stateStr);
+                  if (state.currentSession && state.currentSession.currentIndex < state.currentSession.questions.length) {
+                      hasActiveSession = true;
+                  }
+              }
+              
+              if (hasActiveSession) {
+                  startLesson(savedClass);
+              } else {
+                  localStorage.removeItem('historyQuiz_activeClass');
+                  showScreen('startScreen');
+              }
+          }
+        } else {
+          statusEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Не знайдено завдань. Перевірте посилання.`;
+          statusEl.classList.add('text-rose-600');
+        }
+      });
+    });
+
+    function normalizeText(str) {
+      if (!str) return "";
+      return str.toString().toLowerCase().trim().replace(/[\"\'\`’«»\.\,\-\–\—\?\!\:\;\(\)]/g, '').replace(/\s+/g, ' ');
+    }
+
+    function checkTextAnswer(userAnswer, expectedKey) {
+      const cleanUser = normalizeText(userAnswer);
+      if (!cleanUser) return false;
+      const keyVariants = expectedKey.split(/[\/\|]/).map(k => normalizeText(k));
+      return keyVariants.includes(cleanUser);
+    }
+
+    function extractCorrectLetters(key, options) {
+      if (!key) return [];
+      let cleanKey = key.trim();
+      let validLetters = options.map(opt => opt.trim().charAt(0).toUpperCase());
+      
+      let normKey = normalizeText(cleanKey);
+      let foundByText = [];
+      options.forEach(opt => {
+        let normOpt = normalizeText(opt);
+        if (normKey.length > 1 && (normOpt.includes(normKey) || normKey.includes(normOpt))) {
+          foundByText.push(opt.trim().charAt(0).toUpperCase());
+        }
+      });
+      if (foundByText.length > 0) return foundByText;
+      
+      let matches = cleanKey.toUpperCase().match(/[А-ЯІЇЄҐA-Z0-9]/g) || [];
+      return matches.filter(l => validLetters.includes(l));
+    }
+
+    function goToMainMenu() {
+      localStorage.removeItem('historyQuiz_activeClass');
+      showScreen('startScreen');
+    }
+    
+    function showScreen(screenId) {
+      document.getElementById('startScreen').classList.add('hidden');
+      document.getElementById('quizScreen').classList.add('hidden');
+      document.getElementById('summaryScreen').classList.add('hidden');
+      document.getElementById(screenId).classList.remove('hidden');
+      document.getElementById('navChangeClassBtn').classList.toggle('hidden', screenId !== 'quizScreen');
+      
+      const resetBtn = document.getElementById('navResetProgressBtn');
+      if(resetBtn) resetBtn.classList.toggle('hidden', screenId !== 'quizScreen');
+    }
+
+    function confirmChangeClass() {
+      if (confirm('Ви дійсно бажаєте змінити клас?')) {
+        localStorage.removeItem('historyQuiz_activeClass');
+        showScreen('startScreen');
+      }
+    }
+
+    function startLesson(classLevel) {
+      if (classLevel.includes('11')) {
+          alert("Цей розділ ще в розробці. Слідкуйте за оновленнями!");
+          return;
+      }
+
+      if (database.length === 0) {
+        alert("Зачекайте секунду, база даних ще завантажується.");
+        return;
+      }
+      
+      selectedClass = classLevel;
+      document.getElementById('quizClassBadge').textContent = `${classLevel} клас`;
+      localStorage.setItem('historyQuiz_activeClass', classLevel);
+
+      const savedState = localStorage.getItem('historyQuizState_' + classLevel);
+      let state = savedState ? JSON.parse(savedState) : { seenQuestions: [], currentSession: null, completedLessons: 0 };
+
+      let lessonNum = 1;
+
+      if (state.currentSession && state.currentSession.currentIndex < state.currentSession.questions.length) {
+        currentQuestions = state.currentSession.questions;
+        currentIndex = state.currentSession.currentIndex;
+        score = state.currentSession.score;
+        
+        // Беремо номер уроку з активної сесії
+        lessonNum = state.currentSession.lessonNumber || (state.completedLessons || 0) + 1;
+      } else {
+        let classDb = database.filter(q => q.class === classLevel || q.class.includes(classLevel));
+        if (classDb.length === 0) {
+          alert(`Не знайдено питань для ${classLevel} класу.`);
+          return;
+        }
+
+        let seenSet = new Set(state.seenQuestions || []);
+        let unseenPool = classDb.filter(q => !seenSet.has(q.question));
+        let seenPool = classDb.filter(q => seenSet.has(q.question));
+
+        unseenPool.sort(() => Math.random() - 0.5);
+        seenPool.sort(() => Math.random() - 0.5);
+
+        let finalQuestions = [];
+        if (unseenPool.length === 0) {
+          finalQuestions = seenPool.slice(0, 20);
+        } else {
+          let maxRepeats = Math.min(8, seenPool.length);
+          let unseenNeeded = 20 - maxRepeats;
+          let actualUnseen = Math.min(unseenNeeded, unseenPool.length);
+          finalQuestions.push(...unseenPool.slice(0, actualUnseen));
+          finalQuestions.push(...seenPool.slice(0, maxRepeats));
+        }
+
+        currentQuestions = finalQuestions.sort(() => Math.random() - 0.5);
+        currentIndex = 0;
+        score = 0;
+        
+        // Формуємо номер на основі кількості пройдених мікроуроків
+        lessonNum = (state.completedLessons || 0) + 1;
+        state.currentSession = { questions: currentQuestions, currentIndex: 0, score: 0, lessonNumber: lessonNum };
+        localStorage.setItem('historyQuizState_' + classLevel, JSON.stringify(state));
+      }
+
+      const lessonBadge = document.getElementById('quizLessonBadge');
+      if (lessonBadge) {
+          lessonBadge.textContent = `Мікроурок №${lessonNum}`;
+      }
+
+      showScreen('quizScreen');
+      renderQuestion();
+    }
+
+    function saveProgress(advanceIndex = false) {
+      let stateStr = localStorage.getItem('historyQuizState_' + selectedClass);
+      let state = stateStr ? JSON.parse(stateStr) : { seenQuestions: [], currentSession: null };
+      
+      if (advanceIndex && currentIndex < currentQuestions.length) {
+        let q = currentQuestions[currentIndex];
+        if (!state.seenQuestions.includes(q.question)) {
+          state.seenQuestions.push(q.question);
+        }
+      }
+
+      if (state.currentSession) {
+        state.currentSession = {
+          questions: currentQuestions,
+          currentIndex: advanceIndex ? currentIndex + 1 : currentIndex,
+          score: score
+        };
+      }
+      localStorage.setItem('historyQuizState_' + selectedClass, JSON.stringify(state));
+    }
+
+    function resetProgress() {
+      if(confirm('Ви впевнені, що хочете повністю очистити прогрес та історію для ВСІХ класів?')) {
+        // 1. Видаляємо збережені дані абсолютно всіх блоків
+        localStorage.removeItem('historyQuizState_6-8');
+        localStorage.removeItem('historyQuizState_9');
+        localStorage.removeItem('historyQuizState_10');
+        localStorage.removeItem('historyQuizState_11');
+        
+        // 2. Видаляємо інформацію про останній відкритий клас
+        localStorage.removeItem('historyQuiz_activeClass'); 
+        
+        // 3. Жорстко обнуляємо всі робочі змінні програми
+        selectedClass = "";
+        score = 0;
+        currentIndex = 0;
+        currentQuestions = [];
+        isAnswered = false;
+        selectedOptions = [];
+        
+        // 4. Миттєво перекидаємо на головний екран
+        showScreen('startScreen'); 
+      }
+    }
+
+    function renderQuestion() {
+      isAnswered = false;
+      selectedOptions = []; 
+      const q = currentQuestions[currentIndex];
+      const total = currentQuestions.length;
+      
+      document.getElementById('quizProgressText').textContent = `Запитання ${currentIndex + 1}/${total}`;
+      document.getElementById('quizScoreText').textContent = `${score} балів`;
+      document.getElementById('progressBar').style.width = `${((currentIndex + 1) / total) * 100}%`;
+      document.getElementById('questionText').textContent = q.question;
+
+      const imgContainer = document.getElementById('questionImageContainer');
+      const imgEl = document.getElementById('questionImg');
+      
+      if (q.image && q.image.length > 2) {
+        imgContainer.classList.remove('hidden');
+        imgEl.src = q.image;
+        imgEl.classList.remove('hidden');
+      } else {
+        imgContainer.classList.add('hidden');
+        imgEl.classList.add('hidden');
+      }
+
+      const optionsContainer = document.getElementById('optionsContainer');
+      const textInputContainer = document.getElementById('textInputContainer');
+      const feedbackContainer = document.getElementById('feedbackContainer');
+
+      optionsContainer.innerHTML = '';
+      textInputContainer.classList.add('hidden');
+      feedbackContainer.classList.add('hidden');
+
+      const isOddOneOut = q.question.toLowerCase().includes('зайве') || q.question.toLowerCase().includes('зайвий');
+
+      if (q.type === 'flashcard') {
+        document.getElementById('questionTypeLabel').textContent = 'Картка для самоперевірки';
+        document.getElementById('questionInstruction').textContent = 'Сформулюйте відповідь подумки, а потім перевірте себе.';
+        optionsContainer.classList.remove('hidden');
+
+        const revealBtn = document.createElement('button');
+        revealBtn.className = 'w-full py-4 bg-indigo-100 hover:bg-indigo-200 text-indigo-800 rounded-xl font-bold text-sm shadow-md transition flex items-center justify-center space-x-2 border border-indigo-200';
+        revealBtn.innerHTML = '<i class="fa-regular fa-eye text-lg"></i><span>Показати правильну відповідь</span>';
+        revealBtn.onclick = () => revealFlashcard();
+        optionsContainer.appendChild(revealBtn);
+
+      } else if (q.type === 'matching') {
+        document.getElementById('questionTypeLabel').textContent = 'Встановлення відповідності';
+        document.getElementById('questionInstruction').innerHTML = 'Утворіть логічні пари. Оберіть правильну літеру для кожної цифри зі списку.';
+        optionsContainer.classList.remove('hidden');
+
+        const textBlock = document.createElement('div');
+        textBlock.className = 'text-sm text-slate-800 bg-slate-50 p-4 rounded-xl border border-slate-200 mb-4 space-y-2 leading-relaxed';
+        
+        q.options.forEach(line => {
+            const p = document.createElement('div');
+            p.innerHTML = line.replace(/^(\d+\.|[А-ЯІЇЄҐA-Z]\))/g, '<strong>$1</strong>');
+            textBlock.appendChild(p);
+        });
+        optionsContainer.appendChild(textBlock);
+
+        let requiredNumbers = [];
+        const pairsMatch = q.key.match(/(\d)\s*[-–—]?\s*([А-ЯІЇЄҐA-Zа-яіїєґa-z])/gi);
+        if (pairsMatch) {
+            requiredNumbers = pairsMatch.map(p => p.match(/\d/)[0]);
+        } else {
+            requiredNumbers = ["1", "2", "3", "4"];
+        }
+
+        const selectsContainer = document.createElement('div');
+        selectsContainer.className = 'grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4';
+        selectsContainer.id = 'matchingSelects';
+
+        const letters = ['А', 'Б', 'В', 'Г', 'Д', 'Е'];
+
+        requiredNumbers.forEach(num => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'flex items-center justify-between space-x-2 bg-white border border-slate-200 p-2 rounded-lg shadow-sm transition-all';
+            wrapper.innerHTML = `<span class="font-bold text-brand-600 w-5 text-center">${num}</span><span class="text-slate-300">-</span>`;
+            
+            const select = document.createElement('select');
+            select.className = 'matching-select flex-1 bg-slate-50 border border-slate-200 rounded-md text-sm py-1.5 px-1 font-bold text-slate-700 outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 cursor-pointer';
+            select.dataset.num = num;
+            
+            let html = `<option value="">?</option>`;
+            letters.forEach(l => html += `<option value="${l}">${l}</option>`);
+            select.innerHTML = html;
+            
+            wrapper.appendChild(select);
+            selectsContainer.appendChild(wrapper);
+        });
+        
+        optionsContainer.appendChild(selectsContainer);
+
+        const submitBtn = document.createElement('button');
+        submitBtn.className = 'w-full py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-semibold text-sm shadow-md transition flex items-center justify-center space-x-2';
+        submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i><span>Надіслати</span>';
+        submitBtn.onclick = () => submitAnswer();
+        optionsContainer.appendChild(submitBtn);
+
+      } else if (q.type === 'chronology') {
+        document.getElementById('questionTypeLabel').textContent = 'Хронологічна послідовність';
+        document.getElementById('questionInstruction').innerHTML = 'Встановіть події у правильній послідовності. <br><span class="text-[11px] text-slate-500 mt-1 inline-block">💡 <strong>Увага:</strong> перша подія (найдавніша) має бути <strong>на самому верху</strong>. Використовуйте стрілочки.</span>';
+        optionsContainer.classList.remove('hidden');
+
+        const listWrapper = document.createElement('div');
+        listWrapper.className = 'space-y-2';
+        listWrapper.id = 'chronologyList';
+        
+        q.options.forEach((optText) => {
+          const item = document.createElement('div');
+          item.className = 'chronology-item w-full p-3 rounded-xl border border-slate-200 bg-white text-left font-medium text-xs md:text-sm text-slate-800 flex items-center shadow-sm transition-all';
+          item.dataset.letter = optText.trim().charAt(0).toUpperCase();
+          
+          item.innerHTML = `
+            <div class="flex flex-col space-y-2 mr-3 px-2 py-1 bg-slate-50 border border-slate-100 rounded-lg">
+              <button onclick="moveItemUp(this, event)" class="text-slate-400 hover:text-brand-600 transition"><i class="fa-solid fa-chevron-up"></i></button>
+              <button onclick="moveItemDown(this, event)" class="text-slate-400 hover:text-brand-600 transition"><i class="fa-solid fa-chevron-down"></i></button>
+            </div>
+            <span class="flex-1">${optText}</span>
+          `;
+          listWrapper.appendChild(item);
+        });
+        optionsContainer.appendChild(listWrapper);
+
+        const submitBtn = document.createElement('button');
+        submitBtn.className = 'w-full py-3 mt-4 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-semibold text-sm shadow-md transition flex items-center justify-center space-x-2';
+        submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i><span>Надіслати</span>';
+        submitBtn.onclick = () => submitAnswer();
+        optionsContainer.appendChild(submitBtn);
+
+      } else if (q.type === 'text') {
+        document.getElementById('questionTypeLabel').textContent = 'Коротка відповідь';
+        
+        let adviceText = '💡 <strong>Порада:</strong> імена правителів чи діячів пишіть у називному відмінку (напр. Вільгельм II).';
+        if (isOddOneOut) {
+            adviceText = '💡 <strong>Порада:</strong> проаналізуйте варіанти та напишіть той, що не відповідає загальній логіці.';
+        }
+        
+        document.getElementById('questionInstruction').innerHTML = `Введіть відповідь у полі нижче. <br><span class="text-[11px] text-slate-500 mt-1 inline-block">${adviceText}</span>`;
+        textInputContainer.classList.remove('hidden');
+        
+        textInputContainer.innerHTML = `
+          <input type="text" id="userTextInput" placeholder="Введіть дату, прізвище або термін..." class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none transition text-sm text-slate-800 font-medium">
+          <button onclick="submitAnswer()" class="w-full py-3 mt-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-semibold text-sm shadow-md transition flex items-center justify-center space-x-2">
+            <i class="fa-solid fa-paper-plane"></i><span>Надіслати</span>
+          </button>
+        `;
+        setTimeout(() => document.getElementById('userTextInput').focus(), 100);
+      } else if (q.type === 'choice' || q.type === 'true_false') {
+        const correctLetters = extractCorrectLetters(q.key, q.options);
+        const isMultipleChoice = q.type === 'choice' && correctLetters.length > 1;
+        
+        document.getElementById('questionTypeLabel').textContent = q.type === 'true_false' ? 'Вибір "Так/Ні"' : (isMultipleChoice ? 'Множинний вибір' : 'Вибір однієї відповіді');
+        
+        let instructionText = isMultipleChoice ? `Оберіть ${correctLetters.length} правильні варіанти.` : 'Оберіть 1 правильний варіант.';
+        if (isOddOneOut) instructionText = 'Оберіть 1 варіант, що є зайвим (випадає із загального ряду).';
+        
+        document.getElementById('questionInstruction').textContent = instructionText;
+        optionsContainer.classList.remove('hidden');
+
+        q.options.forEach((optText) => {
+          const btn = document.createElement('button');
+          btn.className = 'option-card w-full p-4 rounded-xl border border-slate-200 bg-white text-left font-medium text-xs md:text-sm text-slate-800 transition flex items-center justify-between shadow-sm';
+          btn.innerHTML = `<span>${optText}</span><i class="fa-regular ${isMultipleChoice ? 'fa-square' : 'fa-circle'} text-slate-300 text-lg"></i>`;
+          btn.onclick = () => toggleChoiceOption(optText, btn, isMultipleChoice);
+          optionsContainer.appendChild(btn);
+        });
+
+        const submitBtn = document.createElement('button');
+        submitBtn.className = 'w-full py-3 mt-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-semibold text-sm shadow-md transition flex items-center justify-center space-x-2';
+        submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i><span>Надіслати</span>';
+        submitBtn.onclick = () => submitAnswer();
+        optionsContainer.appendChild(submitBtn);
+      }
+    }
+
+    function moveItemUp(btn, e) {
+      e.stopPropagation();
+      if (isAnswered) return;
+      const item = btn.closest('.chronology-item');
+      const prev = item.previousElementSibling;
+      if (prev) item.parentNode.insertBefore(item, prev);
+    }
+    
+    function moveItemDown(btn, e) {
+      e.stopPropagation();
+      if (isAnswered) return;
+      const item = btn.closest('.chronology-item');
+      const next = item.nextElementSibling;
+      if (next) item.parentNode.insertBefore(next, item);
+    }
+
+    function revealFlashcard() {
+      if (isAnswered) return;
+      const q = currentQuestions[currentIndex];
+      const optionsContainer = document.getElementById('optionsContainer');
+      optionsContainer.innerHTML = ''; 
+
+      const feedbackBox = document.getElementById('feedbackContainer');
+      const feedbackTitle = document.getElementById('feedbackTitle');
+      const feedbackDetails = document.getElementById('feedbackDetails');
+
+      feedbackBox.className = 'animate-fade-in p-5 rounded-xl space-y-3 bg-slate-50 border border-slate-200 text-slate-800 shadow-sm';
+      feedbackTitle.innerHTML = `<i class="fa-solid fa-book-open text-indigo-600 text-lg"></i><span class="font-bold text-indigo-900">Відповідь та пояснення:</span>`;
+      
+      let displayKey = q.key ? q.key.trim().replace(/\n/g, '<br>') : '';
+      let displayExp = q.explanation ? q.explanation.trim().replace(/\n/g, '<br>') : '';
+      let displayOpt = (q.options && q.options.length > 0) ? q.options.join('<br>') : '';
+
+      if (!displayKey) {
+         if (displayExp) {
+             displayKey = displayExp;
+             displayExp = '';
+         } else if (displayOpt) {
+             displayKey = displayOpt;
+         } else {
+             displayKey = "<span class='text-rose-500 font-medium'>Відповідь не вказана у таблиці. Перевірте колонки.</span>";
+         }
+      }
+
+      feedbackDetails.innerHTML = `
+        <div class="text-slate-900 font-medium text-sm border-l-4 border-indigo-500 pl-3 bg-white p-3 rounded-r-lg shadow-sm leading-relaxed">${displayKey}</div>
+        ${displayExp ? `<div class="mt-3 text-slate-700 text-xs md:text-sm"><strong>💡 Додатково:</strong> ${displayExp}</div>` : ''}
+        
+        <div id="selfAssessmentBox" class="mt-4 pt-4 border-t border-slate-200">
+          <p class="text-xs text-slate-500 mb-3 font-semibold text-center uppercase tracking-wider">Як ви впоралися?</p>
+          <div class="flex flex-col sm:flex-row gap-3 justify-center">
+            <button onclick="assessFlashcard(true)" class="flex-1 py-2.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-lg font-semibold text-xs transition border border-emerald-300 shadow-sm"><i class="fa-solid fa-check mr-1"></i> Відповів правильно</button>
+            <button onclick="assessFlashcard(false)" class="flex-1 py-2.5 bg-rose-100 hover:bg-rose-200 text-rose-800 rounded-lg font-semibold text-xs transition border border-rose-300 shadow-sm"><i class="fa-solid fa-xmark mr-1"></i> Помилка</button>
+          </div>
+        </div>
+      `;
+      
+      const nextBtn = feedbackBox.querySelector('button[onclick="nextQuestion()"]');
+      if(nextBtn) nextBtn.parentElement.classList.add('hidden');
+      const aiBtn = feedbackBox.querySelector('button[onclick="askAI()"]');
+      if(aiBtn) aiBtn.parentElement.classList.add('hidden');
+
+      feedbackBox.classList.remove('hidden');
+    }
+
+    function assessFlashcard(isCorrect) {
+       isAnswered = true;
+       const feedbackBox = document.getElementById('feedbackContainer');
+       const assessBox = document.getElementById('selfAssessmentBox');
+       
+       assessBox.innerHTML = `<div class="text-center text-sm font-bold ${isCorrect ? 'text-emerald-600' : 'text-rose-600'} p-2 bg-white rounded-lg shadow-sm border ${isCorrect ? 'border-emerald-200' : 'border-rose-200'}">${isCorrect ? '✅ Зараховано (+1 бал)' : '❌ Потребує повторення (0 балів)'}</div>`;
+
+       if (isCorrect) {
+         score++;
+         document.getElementById('quizScoreText').textContent = `${score} балів`;
+       }
+       
+       saveProgress(true);
+       
+       const nextBtn = feedbackBox.querySelector('button[onclick="nextQuestion()"]');
+       if(nextBtn) nextBtn.parentElement.classList.remove('hidden');
+       const aiBtn = feedbackBox.querySelector('button[onclick="askAI()"]');
+       if(aiBtn) aiBtn.parentElement.classList.remove('hidden');
+    }
+
+    function toggleChoiceOption(optText, btnEl, isMultipleChoice) {
+      if (isAnswered) return;
+      
+      if (!isMultipleChoice) {
+        selectedOptions = [];
+        document.querySelectorAll('#optionsContainer .option-card').forEach(b => {
+          b.classList.remove('border-brand-500', 'bg-brand-50', 'ring-2', 'ring-brand-100');
+          b.querySelector('i').className = 'fa-regular fa-circle text-slate-300 text-lg';
+        });
+      }
+
+      const index = selectedOptions.indexOf(optText);
+      const icon = btnEl.querySelector('i');
+      
+      if (index > -1) {
+        selectedOptions.splice(index, 1);
+        btnEl.classList.remove('border-brand-500', 'bg-brand-50', 'ring-2', 'ring-brand-100');
+        icon.className = `fa-regular ${isMultipleChoice ? 'fa-square' : 'fa-circle'} text-slate-300 text-lg`;
+      } else {
+        selectedOptions.push(optText);
+        btnEl.classList.add('border-brand-500', 'bg-brand-50', 'ring-2', 'ring-brand-100');
+        icon.className = `fa-solid ${isMultipleChoice ? 'fa-square-check' : 'fa-circle-check'} text-brand-600 text-lg`;
+      }
+    }
+
+    function submitAnswer() {
+      if (isAnswered) return;
+      const q = currentQuestions[currentIndex];
+      let isCorrect = false;
+
+      if (q.type === 'text') {
+        const userVal = document.getElementById('userTextInput').value.trim();
+        if (!userVal) return;
+        isCorrect = checkTextAnswer(userVal, q.key);
+        
+      } else if (q.type === 'matching') {
+        const selects = document.querySelectorAll('.matching-select');
+        let allAnswered = true;
+        selects.forEach(s => { if (!s.value) allAnswered = false; });
+        if (!allAnswered) {
+            alert("Будь ласка, оберіть літеру для кожної цифри.");
+            return;
+        }
+
+        isCorrect = true;
+        const correctPairs = q.key.match(/(\d)\s*[-–—]?\s*([А-ЯІЇЄҐA-Zа-яіїєґa-z])/gi) || [];
+        const correctMap = {};
+        correctPairs.forEach(p => {
+            const num = p.match(/\d/)[0];
+            const letter = p.match(/[А-ЯІЇЄҐA-Zа-яіїєґa-z]/i)[0].toUpperCase();
+            correctMap[num] = letter;
+        });
+
+        selects.forEach(s => {
+            const num = s.dataset.num;
+            const letter = s.value;
+            s.disabled = true;
+            
+            if (correctMap[num] && correctMap[num] === letter) {
+                s.parentElement.classList.remove('border-slate-200');
+                s.parentElement.classList.add('border-emerald-500', 'bg-emerald-50');
+                s.classList.add('text-emerald-700', 'bg-emerald-100');
+            } else {
+                isCorrect = false;
+                s.parentElement.classList.remove('border-slate-200');
+                s.parentElement.classList.add('border-rose-500', 'bg-rose-50');
+                s.classList.add('text-rose-700', 'bg-rose-100');
+            }
+        });
+        document.getElementById('optionsContainer').querySelector('button:last-child').style.display = 'none';
+
+      } else if (q.type === 'chronology') {
+        const items = document.querySelectorAll('#chronologyList .chronology-item');
+        if (items.length === 0) return;
+        
+        let userSeq = "";
+        items.forEach(item => userSeq += item.dataset.letter);
+        const correctSeq = (q.key.match(/[А-ЯІЇЄҐA-Z0-9]/gi) || []).map(l=>l.toUpperCase()).join('');
+        isCorrect = (userSeq === correctSeq);
+        
+        items.forEach(item => {
+            const btns = item.querySelectorAll('button');
+            btns.forEach(b => b.disabled = true);
+            
+            if (isCorrect) {
+                item.className = 'chronology-item w-full p-3 rounded-xl border-2 border-emerald-500 bg-emerald-50 text-emerald-900 font-semibold text-xs md:text-sm flex items-center shadow-sm opacity-100';
+            } else {
+                item.className = 'chronology-item w-full p-3 rounded-xl border-2 border-rose-500 bg-rose-50 text-rose-900 font-medium text-xs md:text-sm flex items-center shadow-sm opacity-80';
+            }
+        });
+        document.getElementById('optionsContainer').querySelector('button:last-child').style.display = 'none';
+
+      } else if (q.type === 'true_false') {
+        if (selectedOptions.length === 0) return;
+        const userAns = selectedOptions[0].trim().toLowerCase();
+        
+        const correctLetters = extractCorrectLetters(q.key, q.options);
+        const correctOpts = q.options.filter(o => correctLetters.includes(o.trim().charAt(0).toUpperCase()));
+        const correctAns = correctOpts.length > 0 ? correctOpts[0].trim().toLowerCase() : q.key.trim().toLowerCase();
+        
+        isCorrect = (userAns === correctAns);
+        
+        document.querySelectorAll('#optionsContainer .option-card').forEach(btn => {
+          btn.disabled = true;
+          const optText = btn.textContent.trim().toLowerCase();
+          
+          if (optText === correctAns) {
+            btn.className = 'w-full p-4 rounded-xl border-2 border-emerald-500 bg-emerald-50 text-emerald-900 font-semibold text-xs md:text-sm flex items-center justify-between shadow-sm';
+            btn.querySelector('i').className = 'fa-solid fa-check text-emerald-600 text-lg';
+          } else if (optText === userAns) {
+            btn.className = 'w-full p-4 rounded-xl border-2 border-rose-500 bg-rose-50 text-rose-900 font-medium text-xs md:text-sm flex items-center justify-between shadow-sm';
+            btn.querySelector('i').className = 'fa-solid fa-xmark text-rose-600 text-lg';
+          } else {
+            btn.className = 'w-full p-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-400 text-xs md:text-sm flex items-center justify-between opacity-50 shadow-sm';
+          }
+        });
+        document.getElementById('optionsContainer').querySelector('button:last-child').style.display = 'none';
+
+      } else {
+        if (selectedOptions.length === 0) return;
+        
+        const selectedLetters = selectedOptions.map(opt => opt.trim().charAt(0).toUpperCase()).sort();
+        const correctLetters = extractCorrectLetters(q.key, q.options).sort();
+        
+        isCorrect = correctLetters.length > 0 && JSON.stringify(selectedLetters) === JSON.stringify(correctLetters);
+        
+        document.querySelectorAll('#optionsContainer .option-card').forEach(btn => {
+          btn.disabled = true;
+          const optLetter = btn.textContent.trim().charAt(0).toUpperCase();
+          
+          if (correctLetters.includes(optLetter)) {
+            btn.className = 'w-full p-4 rounded-xl border-2 border-emerald-500 bg-emerald-50 text-emerald-900 font-semibold text-xs md:text-sm flex items-center justify-between shadow-sm';
+            btn.querySelector('i').className = 'fa-solid fa-check text-emerald-600 text-lg';
+          } else if (selectedLetters.includes(optLetter)) {
+            btn.className = 'w-full p-4 rounded-xl border-2 border-rose-500 bg-rose-50 text-rose-900 font-medium text-xs md:text-sm flex items-center justify-between shadow-sm';
+            btn.querySelector('i').className = 'fa-solid fa-xmark text-rose-600 text-lg';
+          } else {
+            btn.className = 'w-full p-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-400 text-xs md:text-sm flex items-center justify-between opacity-50 shadow-sm';
+          }
+        });
+        document.getElementById('optionsContainer').querySelector('button:last-child').style.display = 'none';
+      }
+
+      isAnswered = true;
+      displayFeedback(isCorrect, q.key);
+      saveProgress(true);
+    }
+
+    function displayFeedback(isCorrect, key) {
+      const q = currentQuestions[currentIndex];
+      const feedbackBox = document.getElementById('feedbackContainer');
+      const feedbackTitle = document.getElementById('feedbackTitle');
+      const feedbackDetails = document.getElementById('feedbackDetails');
+
+      let displayKey = q.key ? q.key.trim().replace(/\n/g, '<br>') : "Не вказано (Клітинка 'Ключ' у таблиці залишилася порожньою)";
+      
+      if (q.type === 'text' && q.key) {
+          displayKey = q.key.split(/[\/\|]/)[0].trim();
+      } else if (q.type === 'choice' || q.type === 'true_false') {
+          const correctLetters = extractCorrectLetters(q.key, q.options);
+          if (correctLetters.length > 0) {
+             const correctOptionsText = q.options.filter(opt => correctLetters.includes(opt.trim().charAt(0).toUpperCase())).join('<br>');
+             if (correctOptionsText) displayKey = correctOptionsText;
+          }
+      }
+
+      let explanationText = q.explanation ? q.explanation.trim().replace(/\n/g, '<br>') : '';
+
+      if (isCorrect) {
+        score++;
+        feedbackBox.className = 'animate-fade-in p-4 rounded-xl space-y-3 bg-emerald-50 border border-emerald-200 text-emerald-900';
+        feedbackTitle.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600 text-lg"></i><span>🎉 Чудово! Правильно!</span>`;
+        feedbackDetails.innerHTML = `<div><strong>Пояснення:</strong> ${explanationText || 'Молодець!'}</div>`;
+      } else {
+        feedbackBox.className = 'animate-fade-in p-4 rounded-xl space-y-3 bg-rose-50 border border-rose-200 text-rose-900';
+        feedbackTitle.innerHTML = `<i class="fa-solid fa-circle-xmark text-rose-600 text-lg"></i><span>❌ Неправильно.</span>`;
+        feedbackDetails.innerHTML = `<div class="text-rose-700"><strong>✅ Правильна відповідь:</strong><br><span class="font-medium inline-block mt-1 pl-2 border-l-2 border-rose-300">${displayKey}</span></div><div class="mt-3 text-slate-700"><strong>💡 Пояснення:</strong> ${explanationText || 'Варто повторити цю тему.'}</div>`;
+      }
+      document.getElementById('quizScoreText').textContent = `${score} балів`;
+      
+      const nextBtn = feedbackBox.querySelector('button[onclick="nextQuestion()"]');
+      if(nextBtn) nextBtn.parentElement.classList.remove('hidden');
+      const aiBtn = feedbackBox.querySelector('button[onclick="askAI()"]');
+      if(aiBtn) aiBtn.parentElement.classList.remove('hidden');
+
+      feedbackBox.classList.remove('hidden');
+    }
+
+    function askAI() {
+      const q = currentQuestions[currentIndex];
+      const prompt = `Поясни мені історичний матеріал. Запитання: ${q.question}. Правильна відповідь: ${q.key}. Додатково: ${q.explanation}. Поясни простою мовою.`;
+      window.open('https://www.google.com/search?q=' + encodeURIComponent(prompt), '_blank');
+    }
+
+    function nextQuestion() {
+      currentIndex++;
+      if (currentIndex < currentQuestions.length) {
+        renderQuestion();
+      } else {
+        let stateStr = localStorage.getItem('historyQuizState_' + selectedClass);
+        if (stateStr) {
+          let state = JSON.parse(stateStr);
+          state.currentSession = null;
+          // Додаємо лічильник повністю пройдених мікроуроків + 1
+          state.completedLessons = (state.completedLessons || 0) + 1; 
+          localStorage.setItem('historyQuizState_' + selectedClass, JSON.stringify(state));
+        }
+        finishLesson();
+      }
+    }
+
+    function finishLesson() {
+      showScreen('summaryScreen');
+      const total = currentQuestions.length;
+      const percent = Math.round((score / total) * 100);
+      document.getElementById('finalScoreVal').textContent = `${score}/${total}`;
+      document.getElementById('finalPercentVal').textContent = `${percent}%`;
+
+      let grade = "12", comment = "Блискучий результат! Ви чудово орієнтуєтесь в історичних подіях.";
+      if (percent < 50) { grade = "6"; comment = "Рекомендуємо повторити основний матеріал та спробувати ще раз."; }
+      else if (percent < 75) { grade = "8"; comment = "Молодець! Але є куди рости. Спробуємо покращити бали?"; }
+      else if (percent < 95) { grade = "10"; comment = "Чудовий рівень знань! Ще трохи тренувань і буде 100%."; }
+
+      document.getElementById('finalGradeVal').textContent = grade;
+      document.getElementById('finalCommentBox').textContent = comment;
+    }
+
+    function restartCurrentClass() { startLesson(selectedClass); }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter' && document.activeElement.id === 'userTextInput') {
+          submitAnswer();
+        }
+      });
+    });
+    
+    function openImageModal() {
+      const q = currentQuestions[currentIndex];
+      if (!q || !q.image) return;
+      
+      const modal = document.getElementById('imageModal');
+      document.getElementById('modalImg').src = q.image;
+      
+      modal.classList.remove('hidden');
+      setTimeout(() => modal.classList.remove('opacity-0'), 10); // Плавна поява
+    }
+
+    function closeImageModal() {
+      const modal = document.getElementById('imageModal');
+      modal.classList.add('opacity-0');
+      setTimeout(() => modal.classList.add('hidden'), 300); // Чекаємо завершення анімації
+    }
+    </script>
+</body>
+</html>
